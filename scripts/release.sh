@@ -54,16 +54,11 @@ echo "New version: $NEW_VERSION"
 
 # ── 7. Git commit + tag ───────────────────────
 if git rev-parse --git-dir > /dev/null 2>&1; then
-  # Navigate to repo root for git operations
-  REPO_ROOT=$(git rev-parse --show-toplevel)
-  cd "$REPO_ROOT"
-
-  git add packages/sdk/package.json
+  git add package.json
   git commit -m "chore(sdk): release $NEW_VERSION"
-  git tag "sdk-$NEW_VERSION"
+  git tag "$NEW_VERSION"
 
-  echo "Git commit and tag created: sdk-$NEW_VERSION"
-  cd "$PKG_DIR"
+  echo "Git commit and tag created: $NEW_VERSION"
 fi
 
 # ── 8. Publish ────────────────────────────────
