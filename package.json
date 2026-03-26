@@ -3,13 +3,13 @@
   "version": "0.2.2",
   "description": "API monitoring SDK for Statvisor — backend middleware and frontend analytics",
   "author": "mersesarvari",
-  "homepage": "https://github.com/mersesarvari/BackendAnalyzer#readme",
+  "homepage": "https://github.com/mersesarvari/statvisor-sdk#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mersesarvari/BackendAnalyzer.git"
+    "url": "https://github.com/mersesarvari/statvisor-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/mersesarvari/BackendAnalyzer/issues"
+    "url": "https://github.com/mersesarvari/statvisor-sdk/issues"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
