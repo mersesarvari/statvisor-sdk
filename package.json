@@ -1,0 +1,79 @@
+{
+  "name": "@statvisor/sdk",
+  "version": "0.2.2",
+  "description": "API monitoring SDK for Statvisor — backend middleware and frontend analytics",
+  "author": "mersesarvari",
+  "homepage": "https://github.com/mersesarvari/BackendAnalyzer#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mersesarvari/BackendAnalyzer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mersesarvari/BackendAnalyzer/issues"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.mjs",
+      "require": "./dist/browser.js"
+    },
+    "./react": {
+      "types": "./dist/StatvisorAnalytics.d.ts",
+      "import": "./dist/StatvisorAnalytics.mjs",
+      "require": "./dist/StatvisorAnalytics.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "release": "bash scripts/release.sh",
+    "release:minor": "bash scripts/release.sh minor",
+    "release:major": "bash scripts/release.sh major"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/express": "^4",
+    "@types/react": "^18",
+    "tsup": "^8"
+  },
+  "peerDependencies": {
+    "express": ">=4",
+    "fastify": ">=4",
+    "next": ">=14",
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    },
+    "fastify": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "monitoring",
+    "api",
+    "analytics",
+    "middleware",
+    "statvisor"
+  ],
+  "license": "MIT"
+}
