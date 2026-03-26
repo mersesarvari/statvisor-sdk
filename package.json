@@ -1,12 +1,12 @@
 {
   "name": "@statvisor/sdk",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "API monitoring SDK for Statvisor — backend middleware and frontend analytics",
   "author": "mersesarvari",
   "homepage": "https://statvisor.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mersesarvari/statvisor-sdk.git"
+    "url": "git+https://github.com/mersesarvari/statvisor-sdk.git"
   },
   "bugs": {
     "url": "https://github.com/mersesarvari/statvisor-sdk/issues"
