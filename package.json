@@ -1,6 +1,6 @@
 {
   "name": "@statvisor/sdk",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "API monitoring SDK for Statvisor — backend middleware and frontend analytics",
   "author": "mersesarvari",
   "homepage": "https://statvisor.com",
