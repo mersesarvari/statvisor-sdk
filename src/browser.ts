@@ -230,19 +230,56 @@ export function initStatvisor(options: StatvisorBrowserOptions): void {
   }
 
   // ── 1. Page view ────────────────────────────────────────────────────────────
-  sendEvents([
-    {
-      type: "pageview",
-      path,
-      referrer: document.referrer || "",
-      ua: navigator.userAgent,
-      screen_w: window.screen.width,
-      visitor_id: getVisitorId(),
-      session_id: getSessionId(),
-      referrer_domain: getReferrerDomain(),
-      ...getUtmParams(),
-    },
-  ]);
+  function trackPageView(pv_path: string): void {
+    sendEvents([
+      {
+        type: "pageview",
+        path: pv_path,
+        referrer: document.referrer || "",
+        ua: navigator.userAgent,
+        screen_w: window.screen.width,
+        visitor_id: getVisitorId(),
+        session_id: getSessionId(),
+        referrer_domain: getReferrerDomain(),
+        ...getUtmParams(),
+      },
+    ]);
+  }
+
+  trackPageView(path);
+
+  // ── 1b. SPA route change tracking ───────────────────────────────────────────
+  // Next.js App Router (and other SPAs) use history.pushState for client-side
+  // navigation — the page never fully reloads, so we need to detect URL changes
+  // and fire a new page view for each one.
+  let _currentPath = path;
+
+  function onRouteChange(): void {
+    const newPath = window.location.pathname;
+    if (newPath !== _currentPath) {
+      _currentPath = newPath;
+      trackPageView(newPath);
+    }
+  }
+
+  // Patch pushState / replaceState so we're notified synchronously after the
+  // URL updates (the native events fire before location.pathname is updated
+  // on some browsers, so we read it after the original call).
+  const _origPush = history.pushState.bind(history);
+  const _origReplace = history.replaceState.bind(history);
+
+  history.pushState = function (...args: Parameters<typeof history.pushState>) {
+    _origPush(...args);
+    onRouteChange();
+  };
+
+  history.replaceState = function (...args: Parameters<typeof history.replaceState>) {
+    _origReplace(...args);
+    onRouteChange();
+  };
+
+  // popstate fires on browser back/forward navigation.
+  window.addEventListener("popstate", onRouteChange);
 
   // ── 2. TTFB — from navigation timing (synchronous, available immediately) ──
   try {
