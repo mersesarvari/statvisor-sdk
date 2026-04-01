@@ -27,3 +27,16 @@ export interface SdkEvent {
 export interface IngestPayload {
   events: SdkEvent[];
 }
+
+export type LogLevel = "info" | "warn" | "error";
+
+export interface LogEvent {
+  level: LogLevel;
+  message: string;
+  data?: unknown;
+  timestamp: string;
+}
+
+export interface LogPayload {
+  logs: LogEvent[];
+}

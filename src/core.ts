@@ -1,4 +1,4 @@
-import type { StatvisorOptions, SdkEvent, IngestPayload } from "./types";
+import type { StatvisorOptions, SdkEvent, IngestPayload, LogEvent, LogPayload } from "./types";
 
 const DEFAULT_INGEST_URL = "https://statvisor.com/api/ingest";
 const DOCS_URL = "https://statvisor.com";
@@ -49,6 +49,7 @@ function getErrorMessage(status: number, apiKey: string): string {
 }
 const DEFAULT_FLUSH_INTERVAL = 5000;
 const DEFAULT_BATCH_SIZE = 50;
+const DEFAULT_LOG_INGEST_URL = "https://statvisor.com/api/ingest/logs";
 
 export class BatchQueue {
   private queue: SdkEvent[] = [];
@@ -137,6 +138,66 @@ export class BatchQueue {
       if (this.options.debug) {
         console.error("[statvisor] network error during flush:", err);
       }
+    }
+  }
+
+  async shutdown(): Promise<void> {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+    await this.flush();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// LogQueue — batches manual log() events and sends to /api/ingest/logs
+// ---------------------------------------------------------------------------
+
+export class LogQueue {
+  private queue: LogEvent[] = [];
+  private timer: ReturnType<typeof setInterval> | null = null;
+  private apiKey: string;
+  private logIngestUrl: string;
+  private flushInterval: number;
+
+  constructor(options: StatvisorOptions) {
+    this.apiKey = options.apiKey;
+    this.logIngestUrl = DEFAULT_LOG_INGEST_URL;
+    this.flushInterval = options.flushInterval ?? DEFAULT_FLUSH_INTERVAL;
+
+    this.timer = setInterval(() => {
+      this.flush().catch(() => undefined);
+    }, this.flushInterval);
+
+    if (this.timer.unref) {
+      this.timer.unref();
+    }
+  }
+
+  push(event: LogEvent): void {
+    this.queue.push(event);
+    if (this.queue.length >= DEFAULT_BATCH_SIZE) {
+      this.flush().catch(() => undefined);
+    }
+  }
+
+  async flush(): Promise<void> {
+    if (this.queue.length === 0) return;
+    const batch = this.queue.splice(0, this.queue.length);
+    const payload: LogPayload = { logs: batch };
+
+    try {
+      await fetch(this.logIngestUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": this.apiKey,
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      // Never throw — silently swallow network errors
     }
   }
 

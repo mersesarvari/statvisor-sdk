@@ -1,8 +1,8 @@
-import { BatchQueue } from "./core";
-import type { StatvisorOptions, SdkEvent } from "./types";
+import { BatchQueue, LogQueue } from "./core";
+import type { StatvisorOptions, SdkEvent, LogLevel } from "./types";
 
-export type { StatvisorOptions, SdkEvent, IngestPayload } from "./types";
-export { BatchQueue } from "./core";
+export type { StatvisorOptions, SdkEvent, IngestPayload, LogLevel, LogEvent, LogPayload } from "./types";
+export { BatchQueue, LogQueue } from "./core";
 
 // ---------------------------------------------------------------------------
 // Module-level default queue instance (created lazily)
@@ -10,21 +10,25 @@ export { BatchQueue } from "./core";
 
 let _defaultQueue: BatchQueue | null = null;
 let _defaultQueueKey: string | null = null;
+let _logQueue: LogQueue | null = null;
 
 function getOrCreateQueue(options: StatvisorOptions): BatchQueue {
   if (!_defaultQueue) {
     _defaultQueue = new BatchQueue(options);
+    _logQueue = new LogQueue(options);
     _defaultQueueKey = options.apiKey;
 
     if (typeof process !== "undefined" && typeof process.on === "function") {
       process.on("beforeExit", () => {
         _defaultQueue?.flush().catch(() => undefined);
+        _logQueue?.flush().catch(() => undefined);
       });
 
       process.on("SIGTERM", () => {
-        (_defaultQueue?.shutdown() ?? Promise.resolve()).finally(() =>
-          process.exit(0)
-        );
+        Promise.all([
+          _defaultQueue?.shutdown() ?? Promise.resolve(),
+          _logQueue?.shutdown() ?? Promise.resolve(),
+        ]).finally(() => process.exit(0));
       });
     }
   } else if (options.debug && options.apiKey !== _defaultQueueKey) {
@@ -38,11 +42,31 @@ function getOrCreateQueue(options: StatvisorOptions): BatchQueue {
 
 /** Flush all pending events immediately. Call before process exit if needed. */
 export async function shutdown(): Promise<void> {
-  if (_defaultQueue) {
-    await _defaultQueue.shutdown();
-    _defaultQueue = null;
-    _defaultQueueKey = null;
+  await Promise.all([
+    _defaultQueue?.shutdown() ?? Promise.resolve(),
+    _logQueue?.shutdown() ?? Promise.resolve(),
+  ]);
+  _defaultQueue = null;
+  _defaultQueueKey = null;
+  _logQueue = null;
+}
+
+/**
+ * Emit a structured log event. Requires the SDK to be initialised first
+ * (e.g. via `express()`, `fastify()`, or `nextjs()`).
+ *
+ * @example
+ * import * as statvisor from '@statvisor/sdk';
+ * statvisor.log("error", "Payment failed", { userId, amount });
+ * statvisor.log("warn", "Retry triggered", { attempt: 3 });
+ * statvisor.log("info", "User signed up", { plan: "pro" });
+ */
+export function log(level: LogLevel, message: string, data?: unknown): void {
+  if (!_logQueue) {
+    // SDK not initialised — silently drop
+    return;
   }
+  _logQueue.push({ level, message, data, timestamp: new Date().toISOString() });
 }
 
 // ---------------------------------------------------------------------------
