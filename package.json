@@ -1,6 +1,6 @@
 {
   "name": "@statvisor/sdk",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "API monitoring SDK for Statvisor — backend middleware and frontend analytics",
   "author": "mersesarvari",
   "homepage": "https://statvisor.com",
@@ -28,6 +28,11 @@
       "types": "./dist/StatvisorAnalytics.d.ts",
       "import": "./dist/StatvisorAnalytics.mjs",
       "require": "./dist/StatvisorAnalytics.js"
+    },
+    "./consent": {
+      "types": "./dist/ConsentBanner.d.ts",
+      "import": "./dist/ConsentBanner.mjs",
+      "require": "./dist/ConsentBanner.js"
     }
   },
   "scripts": {
