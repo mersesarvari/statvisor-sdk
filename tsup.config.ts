@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/index.ts", "src/browser.ts", "src/StatvisorAnalytics.tsx"],
+  entry: ["src/index.ts", "src/browser.ts", "src/StatvisorAnalytics.tsx", "src/ConsentBanner.tsx"],
   format: ["cjs", "esm"],
   dts: true,
   clean: true,

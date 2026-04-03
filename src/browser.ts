@@ -24,6 +24,78 @@
 
 const DEFAULT_ENDPOINT = "https://statvisor.com/api/ingest/frontend";
 
+const CONSENT_COOKIE = "_sv_consent";
+const VISITOR_COOKIE = "_sv_vid";
+const COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year
+
+function getCookie(name: string): string | null {
+  try {
+    const match = document.cookie.match(
+      new RegExp("(?:^|; )" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "=([^;]*)")
+    );
+    return match ? decodeURIComponent(match[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setCookie(name: string, value: string, maxAge: number): void {
+  try {
+    const secure =
+      typeof window !== "undefined" &&
+      (window.isSecureContext || window.location.hostname === "localhost")
+        ? "; Secure"
+        : "";
+    document.cookie = `${name}=${encodeURIComponent(value)}; Max-Age=${maxAge}; SameSite=Lax${secure}; Path=/`;
+  } catch {
+    /* ignore */
+  }
+}
+
+function deleteCookie(name: string): void {
+  try {
+    document.cookie = `${name}=; Max-Age=0; Path=/`;
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Returns true if the visitor has granted analytics consent. */
+export function hasConsent(): boolean {
+  return getCookie(CONSENT_COOKIE) === "granted";
+}
+
+/**
+ * Grant analytics consent. Call this when the visitor accepts the consent banner.
+ * Sets the _sv_consent cookie and creates a persistent _sv_vid visitor ID cookie.
+ */
+export function grantConsent(): void {
+  setCookie(CONSENT_COOKIE, "granted", COOKIE_MAX_AGE);
+  if (!getCookie(VISITOR_COOKIE)) {
+    setCookie(VISITOR_COOKIE, uuidv4(), COOKIE_MAX_AGE);
+  }
+  try {
+    window.dispatchEvent(new Event("sv:consent-granted"));
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Revoke analytics consent. Call this when the visitor declines or withdraws consent.
+ * Removes the _sv_vid visitor ID cookie.
+ */
+export function revokeConsent(): void {
+  setCookie(CONSENT_COOKIE, "denied", COOKIE_MAX_AGE);
+  deleteCookie(VISITOR_COOKIE);
+  _memVisitorId = "";
+  try {
+    window.dispatchEvent(new Event("sv:consent-revoked"));
+  } catch {
+    /* ignore */
+  }
+}
+
 type Rating = "good" | "needs-improvement" | "poor";
 
 interface PageViewPayload {
@@ -94,13 +166,13 @@ let _memVisitorId = "";
 let _memSessionId = "";
 let _memSessionStart = 0;
 
-function getVisitorId(): string {
+function getVisitorId(): string | undefined {
+  if (!hasConsent()) return undefined;
   try {
-    const key = "_sv_vid";
-    let id = localStorage.getItem(key);
+    let id = getCookie(VISITOR_COOKIE);
     if (!id) {
       id = uuidv4();
-      localStorage.setItem(key, id);
+      setCookie(VISITOR_COOKIE, id, COOKIE_MAX_AGE);
     }
     _memVisitorId = id;
     return id;
